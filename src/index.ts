@@ -19,7 +19,7 @@ export const activateLanguage = Highlighter.activateLanguage
 /**
  * Inject grammars into grammars
  * Returns an array of language ID's that were udpated
- * 
+ *
  * @param scopeName Scope name that needs to be injected into other grammars
  * @param injectInto List of host scope names
  */
@@ -29,10 +29,14 @@ export async function linkInjections(scopeName: string, injectInto: string[]) {
     return affectedLanguages
 }
 
+export  function setRoot(root){
+    Highlighter.root = root
+}
+
 /**
  * Uninject grammars out of grammars
  * Returns an array of language ID's that were udpated
- * 
+ *
  * @param scopeName Scope name that needs to be uninjected out of other grammars
  * @param unInjectFrom  If provided, scope name will be uninjected only from this list of host scope names, otherwise will be uninjected from all
  */
@@ -47,7 +51,7 @@ themedHighlighters.set('default', new Highlighter())
 
 /**
  * Add a Textmate theme to CodeMirror
- * 
+ *
  * @param theme Theme object
  */
 export function addTheme(theme: ITextmateThemePlus): void {
@@ -77,6 +81,7 @@ const updateCmTmBindings = (() => {
         })
     }
 
+    // @ts-ignore
     return (cm: CodeMirror.Editor, invalidateLanguages?: string[]) => new PCancelable<boolean>(async (resolve, reject, onCancel) => {
         (onCancel as any).shouldReject = false
         let canceled = false
@@ -118,7 +123,7 @@ const updateCmTmBindings = (() => {
             const meta = tmThemeStyleNodes.get(prevThemeName)
             if (meta.inUseBy.has(cm) && meta.inUseByCount === 1) {
                 tmThemeStyleNodes.delete(prevThemeName)
-                document.head.removeChild(meta.styleNode)
+                Highlighter.root.removeChild(meta.styleNode)
             } else {
                 meta.inUseBy.delete(cm)
                 meta.inUseByCount--
@@ -137,7 +142,7 @@ const updateCmTmBindings = (() => {
                 const styleNode = document.createElement('style')
                 styleNode.textContent = highlighter.cssText
                 tmThemeStyleNodes.set(themeName, { styleNode, inUseBy: new WeakSet().add(cm), inUseByCount: 1 })
-                document.head.appendChild(styleNode)
+                Highlighter.root.appendChild(styleNode)
             }
         }
 
@@ -173,6 +178,7 @@ const updateCmTmBindings = (() => {
 const safeUpdateCM = (() => {
     const queue: CodeMirror.Editor[] = []
     const resolverCallbacks: WeakMap<CodeMirror.Editor, (success: boolean) => void> = new WeakMap()
+    // @ts-ignore
     let currentActivation: PCancelable.PCancelable<boolean>
     const proceed = async () => {
         const nextCM = queue[0]

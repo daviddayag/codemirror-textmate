@@ -1,9 +1,12 @@
-import { IGrammar, IRawGrammar, IRawTheme, IToken, Registry, StackElement } from 'monaco-textmate'
-import { Theme } from 'monaco-textmate/dist/theme'
-import { tmScopeToCmToken, cssTextFromTmTheme } from './tmToCm'
-import { ITextmateThemePlus } from '.';
+import {IGrammar, IRawGrammar, IToken, Registry, StackElement} from 'monaco-textmate'
+import {Theme} from 'monaco-textmate/dist/theme'
+import {cssTextFromTmTheme, tmScopeToCmToken} from './tmToCm'
+import {ITextmateThemePlus} from '.';
 
-export type IRawGrammarSource = IRawGrammar | Promise<IRawGrammar> | ((scopeName: string) => IRawGrammar | Promise<IRawGrammar>)
+export type IRawGrammarSource =
+    IRawGrammar
+    | Promise<IRawGrammar>
+    | ((scopeName: string) => IRawGrammar | Promise<IRawGrammar>)
 
 export interface IHighlighterState {
     ruleStack: StackElement
@@ -12,13 +15,16 @@ export interface IHighlighterState {
 
 const requestIdle = (ms = 10000) => new Promise<void>((res) => {
     if ('requestIdleCallback' in window) {
-        (window as any).requestIdleCallback(res, { timeout: ms })
+        (window as any).requestIdleCallback(res, {timeout: ms})
     } else {
         setTimeout(res, ms)
     }
 })
 
 class Highlighter {
+
+    static root = document.head
+
     public static addGrammar(scopeName: string, grammar: IRawGrammarSource): void {
         Highlighter.scopeNameToRawGrammars.set(scopeName, grammar)
     }
@@ -186,20 +192,20 @@ class Highlighter {
     public async getTokenizer(languageId: string) {
         const grammar = await Highlighter.loadLanguage(languageId)
         return (stream: CodeMirror.StringStream, state: IHighlighterState): string => {
-            const { pos, string: str } = stream
+            const {pos, string: str} = stream
             if (pos === 0) {
-                const { ruleStack, tokens } = grammar.tokenizeLine(str, state.ruleStack)
+                const {ruleStack, tokens} = grammar.tokenizeLine(str, state.ruleStack)
                 state.tokensCache = tokens.slice()
                 state.ruleStack = ruleStack
             }
 
-            const { tokensCache } = state
+            const {tokensCache} = state
             const nextToken = tokensCache.shift()
             if (!nextToken) {
                 stream.skipToEnd()
                 return null
             }
-            const { endIndex, scopes } = nextToken
+            const {endIndex, scopes} = nextToken
             stream.eatWhile(() => stream.pos < endIndex)
 
             return this.theme
@@ -221,7 +227,7 @@ class Highlighter {
         let i = scopes.length - 1
         let cmToken = null
         do {
-            const { foreground, fontStyle } = this.theme.match(scopes[i--])[0]
+            const {foreground, fontStyle} = this.theme.match(scopes[i--])[0]
             if (foreground > 0) {
                 cmToken = `tm-${foreground}`
                 cmToken = fontStyle === 0
@@ -237,4 +243,4 @@ class Highlighter {
     }
 }
 
-export { Highlighter }
+export {Highlighter}
